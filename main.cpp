@@ -1,15 +1,17 @@
 #include "gpio.hpp"
-#include "pwm.hpp"
+#include "display.hpp"
+#include "timer.hpp"
+#include "stopwatch.hpp"
 
-#include <avr/io.h>
+#include <avr/interrupt.h>
 
 /**
- * Co robi ta funkcja?
+ * Obsługa przerwania przepełnienia Timer/Counter1.
  */
-void holdYourHorses()
+ISR(TIMER1_OVF_vect)
 {
-	CLKPR = _BV(CLKPCE);
-	CLKPR = _BV(CLKPS1) | _BV(CLKPS0);
+	refreshDisplay();
+	stopwatchTick();
 }
 
 /**
@@ -17,9 +19,10 @@ void holdYourHorses()
  */
 int main()
 {
-	holdYourHorses();
 	gpioInitialize();
-	pwmInitialize();
+	timerInitialize();
+
+	sei();
 
 	while (true) {
 	}

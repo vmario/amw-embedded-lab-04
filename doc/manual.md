@@ -1,5 +1,5 @@
 ---
-title: "Ćwiczenie 3: Regulacja jasności LED za pomocą timera"
+title: "Ćwiczenie 4: Multipleksowanie wyświetlacza siedmiosegmentowego"
 subtitle: "Instrukcja laboratorium"
 footer-left: "Instrukcja laboratorium"
 author: [Mariusz Chilmon <<mariusz.chilmon@ctm.gdynia.pl>>]
@@ -12,67 +12,78 @@ header-includes: |
   \usepackage{awesomebox}
 ...
 
-> Fortune favors the prepared mind.
+> If the comment and code disagree, both are probably wrong.
 >
-> — _Louis Pasteur_
+> — _Bjarne Stroustrup_
 
 # Cel ćwiczenia
 
 Celem ćwiczenia jest zapoznanie się z:
 
-* regulacją za pomocą modulacji szerokości impulsu,
-* wykorzystaniem timera jako źródła sygnału PWM,
-* odmierzaniem czasu za pomocą timera.
+* wykorzystaniem rejestru przesuwnego,
+* definiowaniem cyfr na wyświetlaczu siedmiosegmentowym,
+* multipleksowaniem wyświetlacza siedmiosegmentowego,
+* precyzyjną regulacją częstotliwości pracy timera.
 
 # Uruchomienie programu wyjściowego
 
 1. Podłącz płytkę _WPSH209_ do _Arduino Uno_.
-1. Zweryfikuj, czy dioda `D1` świeci maksymalną jasnością.
-1. Zweryfikuj, czy dioda `D3` mruga słabym światłem.
+1. Na kolejnych polach wyświetlacza LED powinny wyświetlać się cyfry.
 
-Dioda `D3` podłączona jest do pinu `PB3`, którego alternatywną funkcją jest `OC2A` (_Timer/Counter2 Output Compare Match A Output_), co oznacza, że jest sterowany zdarzeniem generewanym przez kanał&nbsp;_A_ peryferiału _Timer/Counter2_. Timer ten został skonfigurowany w trybie _Fast PWM_. Jest to tryb, w&nbsp;którym możliwe jest regulowanie mocy dostarczanej do urządzenia wyjściowego (np. LED) poprzez szybkie włączanie i&nbsp;wyłączanie zasilania. Zmieniając proporcję między czasem włączenia i wyłączenia możemy dostarczyć mniej lub więcej mocy w jednostce czasu. W naszym przypadku wpływa to na jasność diody `D3`.
+Multipleksowanie polega na tym, że np. czterocyfrowy wyświetlacz złożony łącznie z $8\cdot4=32$ segmentów (wliczając kropki dziesiętne) można obsłużyć za pomocą znacznie mniejszej liczby pinów mikrokontrolera. W przypadku wyświetlaczy siedmiosegmentowych LED na ogół wykorzystuje się część pinów do włączania na krótki czas pojedynczych cyfr i 8 pinów do włączania segmentów w&nbsp;aktualnie wybranej cyfrze, co w&nbsp;naszym przykładzie oznacza zapotrzebowanie na $8+4=12$ pinów.
 
-![Regulacja mocy za pomocą modulacji szerokości impulsu](pwm.svg)
+\awesomebox[purple]{2pt}{\faMicrochip}{purple}{Poprzez multipleksowanie obsługiwane są różne rodzaje wyświetlaczy, a także klawiatur.}
 
-Licznik `TCNT` (_Timer/Counter Register_) timera w trybie _Fast PWM_ zmienia się od wartości `BOTTOM` (`0x00`) do wartości `TOP` (`0xFF`). Przy wartości `0x00` wyjście `OC2A` załącza sterowane urządzenie, a&nbsp;przy zrównaniu licznika z&nbsp;zaprogramowaną wartością `OCR2A` (_Output Compare Register A_) — wyłącza je. Wartość wpisana do rejestru `OCR2A` pozwala zatem wprost regulować moc dostarczaną do sterowanego urządzenia bez angażowania CPU.
+![Sterowanie wyświetlaczem siedmiosegmentowym](display.png)
 
-![Licznik pracujący w trybie _Fast PWM_](pwm-fast.png)
+Zapotrzebowanie to można jeszcze znacząco zmniejszyć używając rejestru przesuwnego. Jest to układ cyfrowy, który posiada jedno wejście danych i wiele wyjść. Dane wprowadzane są szeregowo, w takt sygnału zegarowego, a po podaniu sygnału zatrzaskującego _latch_ przepisywane są na wyjścia.
 
-\awesomebox[purple]{2pt}{\faMicrochip}{purple}{\textit{Timer/Counter2} może generować dwa sygnały na wyjściach \lstinline{OC2A} i \lstinline{OC2B}, sterowanych — odpowiednio — wartościami rejestrów \lstinline{OCR2A} i \lstinline{OCR2B}. W~tym zadaniu korzystamy tylko z kanału \textit{A} — wyjścia \lstinline{OC2A} i sterującego nim rejestru \lstinline{OCR2A}.}
+Przykładowo, jeżeli rejestr przesuwny ma 8 wyjść, należy podać 8 taktów zegara, by wprowadzić pełny zestaw danych. Rejestr przesuwny posiada wyjście przeniesienia, które można podłączyć do wejścia kolejnego rejestru, dzięki czemu podając 16 taktów zegara możemy wprowadzić łącznie 16 bitów danych do obu rejestrów i wysterować 16 wyjść po podaniu sygnału zatrzaskującego.
 
-\awesomebox[purple]{2pt}{\faMicrochip}{purple}{Mikrokontrolery AVR obok trybut \textit{Fast PWM} udostępniają także tryb \textit{Phase Correct PWM}, w którym uzyskiwana częstotliwość sygnału jest mniejsza, ale sposób synchronizacji impulsów jest korzystniejszy dla sterowania silników.}
+\awesomebox[gray]{2pt}{\faMonument}{gray}{Pierwsze rejestry przesuwne zostały skonstruowane w latach 40. XX wieku na lampach elektronowych. Używane są do dzisiaj w szczególności w obwodach SerDes (\textit{Serializer/Deserializer}), obsługujących magistrale komunikacyjne, np. Ethernet i HDMI.}
+
+![Schemat blokowy rejestru przesuwnego MC74HC595A](shift-register.png){width=10cm}
+
+\awesomebox[purple]{2pt}{\faMicrochip}{purple}{Połączenie multipleksowania oraz rejstrów przesuwnych pozwala obsłużyć $8\cdot4=32$ segmenty wyświetlacza za pomocą zaledwie 3 pinów procesora. Oczywiście, ceną za to jest konieczność oprogramowania całego procesu, który trwa co najmniej kilkadziesiąt taktów zegara mikrokontrolera.}
 
 # Zadanie podstawowe
 
+Celem zadania podstawowego jest uruchomienie wyświetlania multipleksowanego i uzyskanie odmierzania czasu z rozdzielczością 1&nbsp;s.
+
 ## Wymagania funkcjonalne
 
-1. Dioda `D1` świeci maksymalną jasnością.
-1. Dioda `D3` świeci połową jasności bez zauważalnego mrugania. Jasność oceń organoleptycznie[^1].
+1. Częstotliwość multipleksowania wynosi 250&nbsp;Hz, a wyświetlane liczby zmieniają dokładnie co sekundę.
+1. Wszystkie cyfry są wyświetlane prawidłowo.
+
+## Wymagania jakości kodu
+
+1. Wartość rejestru `OCR1A` powinna być zdefiniowana w sposób zależny od częstoliwości taktowania mikrokontrolera i stałej `TIMER_FREQUENCY`, określającej żądaną częstotliwość multipleksowania 250&nbsp;Hz.
+
+\awesomebox[teal]{2pt}{\faCode}{teal}{Dzięki uzależnieniu nastaw timera od stałych zdefiniowanych w kodzie można zarówno łatwo zmienić częstotliwość uzyskiwaną z timera, jak i zachować dotychczasową częstotliwość po zmianie taktowania całego mikrokontrolera (np. w celu obniżenia poboru prądu).}
 
 ## Modyfikacja programu
 
-Zmodyfikuj funkcję `pwmInitialize()`:
+W celu zwiększania częstotliwości multipleksowania zmień stopień preskalera, analogicznie jak w&nbsp;poprzednim ćwiczeniu. Zwróć uwagę, że tym razem używany jest _Timer/Counter1_.
 
-1. Mruganie diody jest zauważalne, ponieważ timer taktowany jest zbyt wolnym zegarem. Zapoznaj się z bitami `CS20`…`CS22`.
-1. Użyj rejestru `OCR2A`, by ustawić jasność diody.
+Aby precyzyjnie ustawić częstotliwość przerwania przepełnienia timera (`TIMER1_OVF` w pliku `main.cpp`), należy przełączyć timer w tryb CTC (_Clear Timer on Compare Match_), który pozwala regulować górną granicę odliczania timera za pomocą rejestru `OCR1A`.
 
-![Za pomocą bitów `CS20`…`CS22` wybierany jest odpowiednio podzielony zegar](timer-prescaler.png)
+Wzór na częstotliwość przebiegu uzyskiwanego w timerze znajduje się w dokumentacji mikrokontrolera. Należy go przekształcić tak, by uzyskać wzór na wartość rejestru $OCRnA$. Żądana częstotliwość $f_{OCnA}$ jest zdefiniowana w stałej `TIMER_FREQUENCY`, zaś częstotliwość zegara systemowego $f_{clk_I/O}$ --- w&nbsp;stałej `F_CPU`.
 
-\awesomebox[violet]{2pt}{\faBook}{violet}{Potrzebne informacje znajdziesz w rozdziale \textit{8-bit Timer/Counter2 with PWM and Asynchronous Operation}, w szczególności w sekcji \textit{Register Description} dokumentacji mikrokontrolera.}
+\awesomebox[teal]{2pt}{\faCode}{teal}{W zadaniu podstawowym należy wprowadzić zmiany w pliku \lstinline{timer.cpp} w obrębie funkcji \lstinline{timerInitialize()}.}
 
-\awesomebox[purple]{2pt}{\faMicrochip}{purple}{W tym ćwiczeniu mikrokontroler taktowany jest zegarem $clk_{I/O} = 2~\text{MHz}$.}
+\awesomebox[violet]{2pt}{\faBook}{violet}{Opis trybu CTC znajduje się w rozdziale \textit{16-bit Timer/Counter1 with PWM} w sekcji \textit{Clear Timer on Compare Match (CTC) Mode} dokumentacji mikrokontrolera.}
 
 # Zadanie rozszerzone
 
+Celem zadania rozszerzonego jest odmierzanie czasu z dokładnością do 0,1&nbsp;s.
+
 ## Wymagania funkcjonalne
 
-1. Dioda `D1` świeci maksymalną jasnością.
-1. Jasność diody `D3` cyklicznie i płynnie zmienia się od minimalnej do maksymalnej i z powrotem.
+1. Liczby są inkrementowane co 0,1&nbsp;s.
+1. Zaświecona jest kropka między pierwszą a drugą liczbą (licząc od prawej).
 
 ## Modyfikacja programu
 
-Wykorzystaj przerwanie `TIMER2_OVF` (plik `pwm.cpp`), które wywoływane jest po przepełnieniu timera (na koniec każdego cyklu odliczania).
+Aby zwiększyć częstotliwość odliczania należy zmodyfikować funkcję `stopwatchTick()` w pliku `stopwatch.cpp`. Jest ona wywoływana w przerwaniu timera, a więc z częstotliwością 250&nbsp;Hz.
 
-\awesomebox[purple]{2pt}{\faMicrochip}{purple}{Przerwanie włącza flaga \lstinline{TOIE2} oraz funkcja \lstinline{sei()}.}
-
-[^1]: Innymi słowy &bdquo;na oko&rdquo;.
+W celu włączenia kropki dziesiętnej na odpowiednim wyświetlaczu należy zmodyfikować funkcję `timeToDisplay()` w pliku `stopwatch.cpp`.
