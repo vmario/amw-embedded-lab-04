@@ -32,13 +32,11 @@ _W trosce o Państwa wyniki proszę o czytelne wpisywanie nazwisk._
 
 ## Zadanie podstawowe
 
-Jaka wartość w rejestrze `OCR1A` zapewnia częstotliwość przebiegu w timerze równą 250&nbsp;Hz?
-\vspace{2.0cm}
+Jaka wartość w rejestrze `OCR1A` zapewnia częstotliwość przebiegu w timerze równą 200&nbsp;Hz?
+\vspace{1.5cm}
 
 Jaką największą i najmniejszą częstotliwość przebiegu można uzyskać w trybie CTC w _Timer/Counter1_?
-\vspace{2.0cm}
-
-\awesomebox[violet]{2pt}{\faBook}{violet}{Opis trybu CTC znajduje się w rozdziale \textit{16-bit Timer/Counter1 with PWM} w sekcji \textit{Clear Timer on Compare Match (CTC) Mode} dokumentacji mikrokontrolera.}
+\vspace{1.5cm}
 
 ## Zadanie rozszerzone
 
