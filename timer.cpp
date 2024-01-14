@@ -3,7 +3,12 @@
 #include <avr/io.h>
 
 /**
- * Taktowanie Timer/Counter1.
+ * Konfiguracja Timer/Counter1.
+ */
+constexpr uint8_t TIMER1_MODE = _BV(WGM12);
+
+/**
+ * Preskaler Timer/Counter1.
  */
 constexpr uint8_t TIMER1_PRESCALER = _BV(CS11);
 
@@ -12,7 +17,8 @@ constexpr uint8_t TIMER1_PRESCALER = _BV(CS11);
  */
 void timerInitialize()
 {
-	TCCR1B = TIMER1_PRESCALER;
-	TIMSK1 = _BV(TOIE1);
+	OCR1A = 0xFFFF;
+	TCCR1B = TIMER1_PRESCALER | TIMER1_MODE;
+	TIMSK1 = _BV(OCIE1A);
 }
 

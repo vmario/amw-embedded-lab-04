@@ -6,9 +6,9 @@
 #include <avr/interrupt.h>
 
 /**
- * Obsługa przerwania przepełnienia Timer/Counter1.
+ * Obsługa przerwania komparatora Timer/Counter1.
  */
-ISR(TIMER1_OVF_vect)
+ISR(TIMER1_COMPA_vect)
 {
 	refreshDisplay();
 	stopwatchTick();
