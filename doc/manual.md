@@ -52,22 +52,26 @@ Celem zadania podstawowego jest uruchomienie wyświetlania multipleksowanego i u
 
 ## Wymagania funkcjonalne
 
-1. Częstotliwość multipleksowania wynosi 250&nbsp;Hz, a wyświetlane liczby zmieniają dokładnie co sekundę.
+1. Częstotliwość multipleksowania wynosi 200&nbsp;Hz, a wyświetlane liczby zmieniają dokładnie co sekundę.
 1. Wszystkie cyfry są wyświetlane prawidłowo.
 
 ## Wymagania jakości kodu
 
-1. Wartość rejestru `OCR1A` powinna być zdefiniowana w sposób zależny od częstoliwości taktowania mikrokontrolera i stałej `TIMER_FREQUENCY`, określającej żądaną częstotliwość multipleksowania 250&nbsp;Hz.
+1. Wartość rejestru `OCR1A` powinna być zdefiniowana w sposób zależny od częstoliwości taktowania mikrokontrolera `F_CPU` i&nbsp;stałej `TIMER_FREQUENCY`, określającej żądaną częstotliwość multipleksowania 200&nbsp;Hz.
 
 \awesomebox[teal]{2pt}{\faCode}{teal}{Dzięki uzależnieniu nastaw timera od stałych zdefiniowanych w kodzie można zarówno łatwo zmienić częstotliwość uzyskiwaną z timera, jak i zachować dotychczasową częstotliwość po zmianie taktowania całego mikrokontrolera (np. w celu obniżenia poboru prądu).}
 
 ## Modyfikacja programu
 
-W celu zwiększania częstotliwości multipleksowania zmień stopień preskalera, analogicznie jak w&nbsp;poprzednim ćwiczeniu. Zwróć uwagę, że tym razem używany jest _Timer/Counter1_.
+Aby precyzyjnie ustawić częstotliwość pracy timera, wykorzystano tryb CTC (_Clear Timer on Compare Match_), który pozwala regulować górną granicę odliczania timera za pomocą rejestru `OCR1A`. W tym trybie wykorzystujemy nie przerwanie przepełnienia timer (`TIMER_OVF`), ponieważ nie dochodzi do przepełnienia timera, ale przerwanie komparatora (`TIMER1_COMPA` w pliku `main.cpp`).
 
-Aby precyzyjnie ustawić częstotliwość przerwania przepełnienia timera (`TIMER1_OVF` w pliku `main.cpp`), należy przełączyć timer w tryb CTC (_Clear Timer on Compare Match_), który pozwala regulować górną granicę odliczania timera za pomocą rejestru `OCR1A`.
+Wzór na częstotliwość przebiegu uzyskiwanego w timerze:
 
-Wzór na częstotliwość przebiegu uzyskiwanego w timerze znajduje się w dokumentacji mikrokontrolera. Należy go przekształcić tak, by uzyskać wzór na wartość rejestru $OCRnA$. Żądana częstotliwość $f_{OCnA}$ jest zdefiniowana w stałej `TIMER_FREQUENCY`, zaś częstotliwość zegara systemowego $f_{clk_I/O}$ --- w&nbsp;stałej `F_CPU`.
+\begin{equation}
+f = \frac{f_{clkI/O}}{N(1 + OCR1A)}
+\end{equation}
+
+Należy go przekształcić tak, by uzyskać wzór na wartość rejestru $OCR1A$. Żądana częstotliwość $f$ jest zdefiniowana w stałej `TIMER_FREQUENCY`, $N$ to wartość dzielnika preskalera, zaś częstotliwość zegara systemowego $f_{clkI/O}$ --- w&nbsp;stałej `F_CPU`.
 
 \awesomebox[teal]{2pt}{\faCode}{teal}{W zadaniu podstawowym należy wprowadzić zmiany w pliku \lstinline{timer.cpp} w obrębie funkcji \lstinline{timerInitialize()}.}
 
